@@ -9,7 +9,6 @@ app.use(bodyParser.json());
 
 app.use((req, res, next) => {
   // Attach CORS headers
-  // Required when using a detached backend (that runs on a different domain)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,7 +17,6 @@ app.use((req, res, next) => {
 
 app.get('/posts', async (req, res) => {
   const storedPosts = await getStoredPosts();
-  // await new Promise((resolve, reject) => setTimeout(() => resolve(), 1500));
   res.json({ posts: storedPosts });
 });
 
@@ -40,4 +38,8 @@ app.post('/posts', async (req, res) => {
   res.status(201).json({ message: 'Stored new post.', post: newPost });
 });
 
-app.listen(8080);
+// Use dynamic port for Vercel
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
