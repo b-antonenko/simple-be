@@ -1,45 +1,52 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-
-const { getStoredPosts, storePosts } = require('./data/posts');
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
 
 const app = express();
+app.use(express.json());
+app.use(cors());
 
-app.use(bodyParser.json());
+const MOCKAPI_BASE_URL = "https://67e26c6c97fc65f53535ff62.mockapi.io/api/posts";
 
-app.use((req, res, next) => {
-  // Attach CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  next();
+// Get all posts
+app.get("/posts", async (req, res) => {
+  try {
+    const response = await axios.get(MOCKAPI_BASE_URL);
+    res.json({ posts: response.data });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
 });
 
-app.get('/posts', async (req, res) => {
-  const storedPosts = await getStoredPosts();
-  res.json({ posts: storedPosts });
+// Get a single post by ID
+app.get("/posts/:id", async (req, res) => {
+  try {
+    const response = await axios.get(`${MOCKAPI_BASE_URL}/${req.params.id}`);
+    res.json({ post: response.data });
+  } catch (error) {
+    res.status(404).json({ error: "Post not found" });
+  }
 });
 
-app.get('/posts/:id', async (req, res) => {
-  const storedPosts = await getStoredPosts();
-  const post = storedPosts.find((post) => post.id === req.params.id);
-  res.json({ post });
-});
+// Add a new post
+app.post("/posts", async (req, res) => {
+   try {
+    const newPost = {
+          author: req.body.author,
+          body: req.body.body,
+          createdAt: new Date().toISOString(),
+        };
 
-app.post('/posts', async (req, res) => {
-  const existingPosts = await getStoredPosts();
-  const postData = req.body;
-  const newPost = {
-    ...postData,
-    id: Math.random().toString(),
-  };
-  const updatedPosts = [newPost, ...existingPosts];
-  await storePosts(updatedPosts);
-  res.status(201).json({ message: 'Stored new post.', post: newPost });
+    const response = await axios.post(MOCKAPI_BASE_URL, newPost, {
+      headers: {'content-type':'application/json'}});
+    res.status(201).json({ message: "Stored new post.", post: response.data });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to store post" });
+  }
 });
 
 // Use dynamic port for Vercel
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
